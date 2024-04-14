@@ -21,7 +21,7 @@ class HhApi:
     def __init__(self):
         self.url = 'https://api.hh.ru/vacancies'
 
-    def get_request(self, employer_id) -> dict:
+    def get_request(self, employer_id):
         """
         Создание запроса
         """
@@ -38,9 +38,6 @@ class HhApi:
             raise ValueError(f'Ошибка доступа к сайту {self.url}')
         else:
             response_data = json.loads(response.text)["items"]
-        response1 = requests.get('https://api.hh.ru/employers')
-        response_data1 = json.loads(response1.text)["items"]
-        # print('-->>', response_data1)
         return response_data
 
     def get_vacancies(self):
