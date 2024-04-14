@@ -1,5 +1,11 @@
 # Программа, которая 
 --------------------------------------------------------------
+Необходимо создать файл "database.ini". Пример:
+[postgresql]
+host=localhost
+user=postgres
+password=Your password
+port=5432
 
 Этот код 
 
