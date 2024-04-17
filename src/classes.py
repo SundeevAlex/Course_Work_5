@@ -27,7 +27,7 @@ class HhApi:
         """
         params = {
             "page": 1,
-            "per_page": 2,
+            "per_page": 3,
             "employer_id": employer_id,
             "only_with_salary": True,
             "area": 113,
@@ -45,6 +45,8 @@ class HhApi:
         Получение вакансий с сайта
         """
         vacancies_list = []
+        employers_list = []
+        check = ''
         for employer in self.employers_dict:
             emp_vacancies = self.get_request(self.employers_dict[employer])
             for vacancy in emp_vacancies:
@@ -53,6 +55,10 @@ class HhApi:
                 else:
                     salary = vacancy['salary']['from']
                 vacancies_list.append(
-                    {'url': vacancy['alternate_url'], 'salary': salary,
-                     'vacancy_name': vacancy['name'], 'employer': employer})
-        return vacancies_list
+                    {'id_vacancy': vacancy['id'], 'url': vacancy['alternate_url'], 'salary': salary,
+                     'name_vacancy': vacancy['name'], 'id_employer': vacancy["employer"]["id"]})
+                if check != vacancy['employer']['id']:
+                    employers_list.append(
+                        {'id_employer': vacancy['employer']['id'], 'name_employer': vacancy['employer']['name']})
+                    check = vacancy['employer']['id']
+        return employers_list, vacancies_list
