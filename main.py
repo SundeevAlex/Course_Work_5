@@ -13,11 +13,11 @@ def main():
     # print(employers_dict)
 
     params = config()
-    create_database('hh_vacancies', params)
+    # create_database('hh_vacancies', params)
 
-    create_tables('hh_vacancies', params)
+    # create_tables('hh_vacancies', params)
 
-    save_data_to_database('hh_vacancies', employers_all_vacancies[0], employers_all_vacancies[1], params)
+    # save_data_to_database('hh_vacancies', employers_all_vacancies[0], employers_all_vacancies[1], params)
 
 
 if __name__ == '__main__':

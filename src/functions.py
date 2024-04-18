@@ -3,7 +3,7 @@ import psycopg2
 
 def create_database(database_name: str, params: dict):
     """
-    Создание базы данных
+    Создание базы данных.
     """
     conn = psycopg2.connect(dbname='postgres', **params)
     conn.autocommit = True
@@ -18,7 +18,7 @@ def create_database(database_name: str, params: dict):
 
 def create_tables(database_name: str, params: dict):
     """
-    Создание таблиц в БД
+    Создание таблиц в БД.
     """
     conn = psycopg2.connect(dbname=database_name, **params)
     with conn:

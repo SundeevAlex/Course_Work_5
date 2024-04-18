@@ -4,7 +4,7 @@ import json
 
 class HhApi:
     """
-    Класс для работы с API сервиса с вакансиями hh.ru
+    Класс для работы с API сервиса с вакансиями hh.ru.
     """
 
     employers_dict = {'2ГИС': '64174',
@@ -23,11 +23,11 @@ class HhApi:
 
     def get_request(self, employer_id):
         """
-        Создание запроса
+        Создание запроса.
         """
         params = {
             "page": 1,
-            "per_page": 3,
+            "per_page": 4,
             "employer_id": employer_id,
             "only_with_salary": True,
             "area": 113,
@@ -42,7 +42,7 @@ class HhApi:
 
     def get_vacancies(self):
         """
-        Получение вакансий с сайта
+        Получение вакансий с сайта.
         """
         vacancies_list = []
         employers_list = []
@@ -62,3 +62,43 @@ class HhApi:
                         {'id_employer': vacancy['employer']['id'], 'name_employer': vacancy['employer']['name']})
                     check = vacancy['employer']['id']
         return employers_list, vacancies_list
+
+
+class DBManager:
+    """
+    Класс для подключения к БД PostgreSQL
+    и получения результатов по разным запросам.
+    """
+
+    def __init__(self, database_name):
+        self.database_name = database_name
+
+    def get_companies_and_vacancies_count(self):
+        """
+        Получает список всех компаний и количество вакансий у каждой компании.
+        """
+        pass
+
+    def get_all_vacancies(self):
+        """
+        Получает список всех вакансий с указанием названия компании, названия вакансии и зарплаты и ссылки на вакансию.
+        """
+        pass
+
+    def get_avg_salary(self):
+        """
+        Получает среднюю зарплату по вакансиям.
+        """
+        pass
+
+    def get_vacancies_with_higher_salary(self):
+        """
+        Получает список всех вакансий, у которых зарплата выше средней по всем вакансиям.
+        """
+        pass
+
+    def get_vacancies_with_keyword(self):
+        """
+        Получает список всех вакансий, в названии которых содержатся переданные в метод слова.
+        """
+        pass
