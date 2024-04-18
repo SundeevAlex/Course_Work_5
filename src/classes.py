@@ -1,5 +1,7 @@
 import requests
 import json
+import psycopg2
+from config import config
 
 
 class HhApi:
@@ -72,12 +74,21 @@ class DBManager:
 
     def __init__(self, database_name):
         self.database_name = database_name
+        self.params = config()
 
     def get_companies_and_vacancies_count(self):
         """
         Получает список всех компаний и количество вакансий у каждой компании.
         """
-        pass
+        with psycopg2.connect(dbname=self.database_name, **self.params) as conn:
+            with conn.cursor() as cur:
+                cur.execute('SELECT employers.name_employer, COUNT(vacancies.id_vacancy) AS count_vacancies '
+                            'FROM employers '
+                            'LEFT JOIN vacancies ON employers.id_employer = vacancies.id_employer '
+                            'GROUP BY employers.name_employer ')
+                results = cur.fetchall()
+        conn.close()
+        return results
 
     def get_all_vacancies(self):
         """
