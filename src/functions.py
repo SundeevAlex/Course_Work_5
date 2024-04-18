@@ -61,5 +61,4 @@ def save_data_to_database(database_name, employers, vacancies, params: dict):
                             """,
                             (vacancy["id_vacancy"], vacancy["name_vacancy"], vacancy["salary"], vacancy["url"],
                              vacancy["id_employer"]))
-
     conn.close()

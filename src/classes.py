@@ -27,18 +27,18 @@ class HhApi:
         Создание запроса.
         """
         params = {
-            "page": 1,
-            "per_page": 3,
-            "employer_id": employer_id,
-            "only_with_salary": True,
-            "area": 113,
-            "only_with_vacancies": True
+            'page': 1,
+            'per_page': 5,
+            'employer_id': employer_id,
+            'only_with_salary': True,
+            'area': 113,
+            'only_with_vacancies': True
         }
         response = requests.get(self.url, params=params)
         if response.status_code != 200:
             raise ValueError(f'Ошибка доступа к сайту {self.url}')
         else:
-            response_data = json.loads(response.text)["items"]
+            response_data = json.loads(response.text)['items']
         return response_data
 
     def get_employers_vacancies(self):
@@ -57,7 +57,7 @@ class HhApi:
                     salary = vacancy['salary']['from']
                 vacancies_list.append(
                     {'id_vacancy': vacancy['id'], 'url': vacancy['alternate_url'], 'salary': salary,
-                     'name_vacancy': vacancy['name'], 'id_employer': vacancy["employer"]["id"]})
+                     'name_vacancy': vacancy['name'], 'id_employer': vacancy['employer']['id']})
                 if check != vacancy['employer']['id']:
                     employers_list.append(
                         {'id_employer': vacancy['employer']['id'], 'name_employer': vacancy['employer']['name']})
@@ -85,32 +85,52 @@ class DBManager:
         """
         Получает список всех компаний и количество вакансий у каждой компании.
         """
-        results = self.execute_total('SELECT employers.name_employer, COUNT(vacancies.id_vacancy) AS count_vacancies '
-                                     'FROM employers '
-                                     'LEFT JOIN vacancies ON employers.id_employer = vacancies.id_employer '
-                                     'GROUP BY employers.name_employer ')
+        results = self.execute_total("SELECT employers.name_employer, COUNT(vacancies.id_vacancy) AS count_vacancies "
+                                     "FROM employers "
+                                     "LEFT JOIN vacancies ON employers.id_employer = vacancies.id_employer "
+                                     "GROUP BY employers.name_employer")
         return results
 
     def get_all_vacancies(self):
         """
         Получает список всех вакансий с указанием названия компании, названия вакансии и зарплаты и ссылки на вакансию.
         """
-        pass
+        results = self.execute_total("SELECT employers.name_employer, vacancies.name_vacancy, salary, url "
+                                     "FROM vacancies "
+                                     "LEFT JOIN employers ON vacancies.id_employer = employers.id_employer")
+        return results
 
     def get_avg_salary(self):
         """
         Получает среднюю зарплату по вакансиям.
         """
-        pass
+        results = self.execute_total("SELECT employers.name_employer, vacancies.name_vacancy, "
+                                     "ROUND(AVG(salary)) AS avg_salary "
+                                     "FROM vacancies "
+                                     "LEFT JOIN employers ON vacancies.id_employer = employers.id_employer "
+                                     "GROUP BY vacancies.name_vacancy, employers.name_employer  "
+                                     "ORDER BY avg_salary DESC")
+        return results
 
     def get_vacancies_with_higher_salary(self):
         """
         Получает список всех вакансий, у которых зарплата выше средней по всем вакансиям.
         """
-        pass
+        results = self.execute_total("SELECT employers.name_employer, vacancies.name_vacancy, salary "
+                                     "FROM vacancies "
+                                     "LEFT JOIN employers ON vacancies.id_employer = employers.id_employer "
+                                     "WHERE salary > (SELECT AVG(salary) FROM vacancies) "
+                                     "ORDER BY salary DESC")
+        return results
 
-    def get_vacancies_with_keyword(self):
+    def get_vacancies_with_keyword(self, keyword):
         """
         Получает список всех вакансий, в названии которых содержатся переданные в метод слова.
         """
-        pass
+        results = self.execute_total(f"SELECT employers.name_employer, vacancies.name_vacancy, vacancies.salary "
+                                     f"FROM vacancies "
+                                     "LEFT JOIN employers ON vacancies.id_employer = employers.id_employer "
+                                     f"WHERE vacancies.name_vacancy LIKE '%{keyword.lower()}%' or "
+                                     f"vacancies.name_vacancy LIKE '%{keyword.capitalize()}%' "
+                                     f"ORDER BY vacancies.name_vacancy, employers.name_employer, vacancies.salary")
+        return results

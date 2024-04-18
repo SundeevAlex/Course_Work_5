@@ -19,6 +19,12 @@ def main():
 
     db = DBManager(DB_NAME)
     print(db.get_companies_and_vacancies_count())
+    # print(db.get_all_vacancies())
+    # print(db.get_avg_salary())
+    # print(db.get_vacancies_with_higher_salary())
+    # print(db.get_vacancies_with_keyword("ст"))
+    # for el in db.get_vacancies_with_keyword("ст"):
+    #     print(f"{el}")
 
 
 if __name__ == '__main__':
