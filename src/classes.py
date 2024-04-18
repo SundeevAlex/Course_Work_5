@@ -1,12 +1,13 @@
 import requests
 import json
+import psycopg2
+from config import config
 
 
 class HhApi:
     """
-    Класс для работы с API сервиса с вакансиями hh.ru
+    Класс для работы с API сервиса с вакансиями hh.ru.
     """
-
     employers_dict = {'2ГИС': '64174',
                       'Ozon': '2180',
                       'Билайн': '4934',
@@ -23,28 +24,30 @@ class HhApi:
 
     def get_request(self, employer_id):
         """
-        Создание запроса
+        Создание запроса.
         """
         params = {
-            "page": 1,
-            "per_page": 2,
-            "employer_id": employer_id,
-            "only_with_salary": True,
-            "area": 113,
-            "only_with_vacancies": True
+            'page': 1,
+            'per_page': 5,
+            'employer_id': employer_id,
+            'only_with_salary': True,
+            'area': 113,
+            'only_with_vacancies': True
         }
         response = requests.get(self.url, params=params)
         if response.status_code != 200:
             raise ValueError(f'Ошибка доступа к сайту {self.url}')
         else:
-            response_data = json.loads(response.text)["items"]
+            response_data = json.loads(response.text)['items']
         return response_data
 
-    def get_vacancies(self):
+    def get_employers_vacancies(self):
         """
-        Получение вакансий с сайта
+        Получение списков работодателей и вакансий с сайта.
         """
         vacancies_list = []
+        employers_list = []
+        check = ''
         for employer in self.employers_dict:
             emp_vacancies = self.get_request(self.employers_dict[employer])
             for vacancy in emp_vacancies:
@@ -53,6 +56,81 @@ class HhApi:
                 else:
                     salary = vacancy['salary']['from']
                 vacancies_list.append(
-                    {'url': vacancy['alternate_url'], 'salary': salary,
-                     'vacancy_name': vacancy['name'], 'employer': employer})
-        return vacancies_list
+                    {'id_vacancy': vacancy['id'], 'url': vacancy['alternate_url'], 'salary': salary,
+                     'name_vacancy': vacancy['name'], 'id_employer': vacancy['employer']['id']})
+                if check != vacancy['employer']['id']:
+                    employers_list.append(
+                        {'id_employer': vacancy['employer']['id'], 'name_employer': vacancy['employer']['name']})
+                    check = vacancy['employer']['id']
+        return employers_list, vacancies_list
+
+
+class DBManager:
+    """
+    Класс для подключения к БД PostgreSQL и получения результатов по различным запросам.
+    """
+    def __init__(self, database_name):
+        self.database_name = database_name
+
+    def execute_total(self, query):
+        conn = psycopg2.connect(dbname=self.database_name, **config())
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(query)
+                result = cur.fetchall()
+        conn.close()
+        return result
+
+    def get_companies_and_vacancies_count(self):
+        """
+        Получает список всех компаний и количество вакансий у каждой компании.
+        """
+        results = self.execute_total("SELECT employers.name_employer, COUNT(vacancies.id_vacancy) AS count_vacancies "
+                                     "FROM employers "
+                                     "LEFT JOIN vacancies ON employers.id_employer = vacancies.id_employer "
+                                     "GROUP BY employers.name_employer")
+        return results
+
+    def get_all_vacancies(self):
+        """
+        Получает список всех вакансий с указанием названия компании, названия вакансии и зарплаты и ссылки на вакансию.
+        """
+        results = self.execute_total("SELECT employers.name_employer, vacancies.name_vacancy, salary, url "
+                                     "FROM vacancies "
+                                     "LEFT JOIN employers ON vacancies.id_employer = employers.id_employer")
+        return results
+
+    def get_avg_salary(self):
+        """
+        Получает среднюю зарплату по вакансиям.
+        """
+        results = self.execute_total("SELECT employers.name_employer, vacancies.name_vacancy, "
+                                     "ROUND(AVG(salary)) AS avg_salary "
+                                     "FROM vacancies "
+                                     "LEFT JOIN employers ON vacancies.id_employer = employers.id_employer "
+                                     "GROUP BY vacancies.name_vacancy, employers.name_employer  "
+                                     "ORDER BY avg_salary DESC")
+        return results
+
+    def get_vacancies_with_higher_salary(self):
+        """
+        Получает список всех вакансий, у которых зарплата выше средней по всем вакансиям.
+        """
+        results = self.execute_total("SELECT employers.name_employer, vacancies.name_vacancy, salary "
+                                     "FROM vacancies "
+                                     "LEFT JOIN employers ON vacancies.id_employer = employers.id_employer "
+                                     "WHERE salary > (SELECT AVG(salary) FROM vacancies) "
+                                     "ORDER BY salary DESC")
+        return results
+
+    def get_vacancies_with_keyword(self, keyword):
+        """
+        Получает список всех вакансий, в названии которых содержатся переданные в метод слова.
+        """
+        results = self.execute_total(f"SELECT employers.name_employer, vacancies.name_vacancy, vacancies.salary "
+                                     f"FROM vacancies "
+                                     "LEFT JOIN employers ON vacancies.id_employer = employers.id_employer "
+                                     f"WHERE vacancies.name_vacancy LIKE '%{keyword.lower()}%' or "
+                                     f"vacancies.name_vacancy LIKE '%{keyword.capitalize()}%' "
+                                     f"ORDER BY vacancies.name_vacancy, employers.name_employer, vacancies.salary")
+        return results
