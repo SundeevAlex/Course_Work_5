@@ -3,24 +3,21 @@ from src.classes import HhApi
 from config import config
 from src.functions import create_database, create_tables, save_data_to_database
 
+DB_NAME = 'hh_vacancies'  # имя создаваемой БД в PostgreSQL
+
 
 def main():
-    # response = HhApi()
-    # employers_all_vacancies = response.get_vacancies()
 
-    # employers_dict = employers_all_vacancies[0]
-    # vacancies_dict = employers_all_vacancies[1]
-    # print(vacancies_dict)
-    # print('***************************')
-    # print(employers_dict)
+    response = HhApi()
+    employers_vacancies_all = response.get_employers_vacancies()
 
-    params = config()
-    # create_database('hh_vacancies', params)
+    create_database(DB_NAME, config())
 
-    # create_tables('hh_vacancies', params)
+    create_tables(DB_NAME, config())
 
-    # save_data_to_database('hh_vacancies', employers_all_vacancies[0], employers_all_vacancies[1], params)
-    db = DBManager('hh_vacancies')
+    save_data_to_database(DB_NAME, employers_vacancies_all[0], employers_vacancies_all[1], config())
+
+    db = DBManager(DB_NAME)
     print(db.get_companies_and_vacancies_count())
 
 

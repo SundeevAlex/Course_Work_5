@@ -8,7 +8,6 @@ class HhApi:
     """
     Класс для работы с API сервиса с вакансиями hh.ru.
     """
-
     employers_dict = {'2ГИС': '64174',
                       'Ozon': '2180',
                       'Билайн': '4934',
@@ -29,7 +28,7 @@ class HhApi:
         """
         params = {
             "page": 1,
-            "per_page": 4,
+            "per_page": 3,
             "employer_id": employer_id,
             "only_with_salary": True,
             "area": 113,
@@ -42,9 +41,9 @@ class HhApi:
             response_data = json.loads(response.text)["items"]
         return response_data
 
-    def get_vacancies(self):
+    def get_employers_vacancies(self):
         """
-        Получение вакансий с сайта.
+        Получение списков работодателей и вакансий с сайта.
         """
         vacancies_list = []
         employers_list = []
@@ -68,26 +67,28 @@ class HhApi:
 
 class DBManager:
     """
-    Класс для подключения к БД PostgreSQL
-    и получения результатов по разным запросам.
+    Класс для подключения к БД PostgreSQL и получения результатов по различным запросам.
     """
-
     def __init__(self, database_name):
         self.database_name = database_name
-        self.params = config()
+
+    def execute_total(self, query):
+        conn = psycopg2.connect(dbname=self.database_name, **config())
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(query)
+                result = cur.fetchall()
+        conn.close()
+        return result
 
     def get_companies_and_vacancies_count(self):
         """
         Получает список всех компаний и количество вакансий у каждой компании.
         """
-        with psycopg2.connect(dbname=self.database_name, **self.params) as conn:
-            with conn.cursor() as cur:
-                cur.execute('SELECT employers.name_employer, COUNT(vacancies.id_vacancy) AS count_vacancies '
-                            'FROM employers '
-                            'LEFT JOIN vacancies ON employers.id_employer = vacancies.id_employer '
-                            'GROUP BY employers.name_employer ')
-                results = cur.fetchall()
-        conn.close()
+        results = self.execute_total('SELECT employers.name_employer, COUNT(vacancies.id_vacancy) AS count_vacancies '
+                                     'FROM employers '
+                                     'LEFT JOIN vacancies ON employers.id_employer = vacancies.id_employer '
+                                     'GROUP BY employers.name_employer ')
         return results
 
     def get_all_vacancies(self):
